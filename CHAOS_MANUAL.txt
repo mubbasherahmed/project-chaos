@@ -1,0 +1,296 @@
+================================================================================
+          C.H.A.O.S. - Command Handling AI Operating System
+                       DETAILED USER MANUAL
+================================================================================
+
+INTRODUCTION
+------------
+Welcome to the Command Handling AI Operating System (C.H.A.O.S.). This is not 
+just a voice assistant; it is a comprehensive AI companion designed to bridge 
+the gap between you and your Windows operating system. Unlike standard assistants 
+that simply perform basic tasks, CHAOS is built with a complex personality engine, 
+local AI intelligence, and deep system integration.
+
+This manual documents every feature of CHAOS, explaining how to use them and
+how they function to enhance your daily workflow.
+
+================================================================================
+0. PRIVACY, SECURITY & OFFLINE OPERATION
+================================================================================
+
+CHAOS runs entirely on your own PC. Nothing you say, type or show on screen is
+sent over the internet.
+
+*   **Speech recognition:** faster-whisper ("base" model, ~145 MB) on your CPU.
+*   **Voice output:** the Windows voices installed on your PC (SAPI).
+*   **AI brain:** Ollama on localhost (e.g. llama3.2 3B, or llama3 8B).
+*   **True Sight:** Windows' built-in OCR engine plus the local AI brain.
+*   **Memory:** one local database file, chaos_data.db, next to CHAOS.py.
+
+OFFLINE MODE is on by default (OFFLINE_MODE = True at the top of CHAOS.py).
+Features that can only work online - weather, news, Wikipedia, web search,
+opening YouTube/Google, WhatsApp Web, the speed test and the public IP lookup -
+reply "That needs the internet..." instead of connecting.
+
+FIRST-TIME SETUP (needs internet once)
+--------------------------------------
+1.  py -3.11 -m pip install -r requirements.txt
+2.  Install Ollama and pull a model:  ollama pull llama3.2
+3.  Cache the speech model:  py -3.11 test_mic.py --download
+After this, CHAOS works with the network cable unplugged.
+
+HARDWARE GUIDE
+--------------
+*   CHAOS itself: well under 1 GB of RAM (shown at startup as "[Memory] ...").
+*   Ollama model: llama3.2 (3B) needs ~2-3 GB RAM/VRAM; llama3 (8B) needs ~5-6 GB.
+*   A GPU is optional. With no GPU, Ollama runs on the CPU (slower answers).
+
+================================================================================
+1. CORE INTERACTION & MODES
+================================================================================
+
+CHAOS is designed to be flexible, allowing you to interact with it in the way 
+that best suits your current environment.
+
+VOICE VS. TYPE INPUT
+--------------------
+By default, CHAOS operates in **Voice Mode**, listening for your commands through 
+your microphone. This provides a hands-free experience similar to JARVIS or Friday. 
+However, if you are in a noisy environment or a quiet library, you can switch to 
+**Type Mode**. In this mode, CHAOS stops listening and instead waits for you to 
+type commands via the terminal.
+
+*   **Command:** "Type mode" - Disables the microphone and prompts for text input.
+*   **Command:** "Voice mode" - Re-enables the microphone for voice commands.
+
+OUTPUT CONTROL
+--------------
+You can also control how CHAOS responds. In **Voice Output Mode**, the AI will 
+speak its responses using the offline Windows voices on your PC. If you prefer
+silence, you can switch to **Text Only Mode**, where CHAOS will simply print its 
+responses to the console window.
+
+*   **Command:** "Turn on voice" / "Switch to voice"
+*   **Command:** "Text mode" / "Switch to text"
+
+THE WAKE WORD SYSTEM
+--------------------
+To prevent CHAOS from listening when you don't want it to, it features a Wake Word 
+system. When enabled, CHAOS enters a low-power listening state and will only 
+respond after it hears "Hey CHAOS" or "CHAOS Activate".
+
+*   **Command:** "Enable wake word" - Starts waiting for the trigger phrase.
+*   **Command:** "Disable wake word" - Listens for all commands continuously.
+
+THE INTERACTIVE MENU
+--------------------
+For users who prefer a graphical interface approach without leaving the terminal, 
+CHAOS includes a comprehensive **Interactive Settings Menu**. This menu allows 
+you to toggle all the above settings, change personalities, and view features 
+using simple number keys (1-9), eliminating the need to remember specific commands 
+for configuring the system.
+
+*   **Command:** "Menu" or "Open settings" - Launches the interactive menu.
+
+================================================================================
+2. PERSONALITY SYSTEM & VOICES
+================================================================================
+
+One of CHAOS's defining features is its personality engine. It doesn't just speak 
+in a robotic monotone; it adopts specific personas that change its tone, vocabulary, 
+and attitude.
+
+AVAILABLE PERSONAS
+------------------
+You can switch between these personas instantly. Each one provides a different 
+atmosphere for your workspace.
+
+1.  **Butler (Default):** A polite, formal, and subservient British assistant. 
+    Use this for a classic "Alfred" or "JARVIS" feel.
+2.  **Jarvis:** An American, highly technical, and efficient AI persona.
+3.  **Friday:** A helpful, softer-spoken female AI assistant.
+4.  **E-Girl:** A playful, slang-using, and casual persona (for fun).
+5.  **Wizard:** speaks in riddles and archaic wisdom.
+6.  **Pirate:** Uses nautical terms and a rougher pirate accent.
+7.  **Professional:** Strictly business, concise, and no-nonsense.
+8.  **Casual:** Like a buddy hanging out, using relaxed language.
+
+*   **Command:** "Switch to [Name] voice" (e.g., "Switch to Jarvis voice").
+
+Personas are spoken with the Windows voices installed on your PC. Each persona
+picks a male or female voice and its own speaking speed. Run "python
+list_voices.py" to see which voices you have; installing more Windows voices
+(Settings > Time & language > Speech) gives the personas more variety.
+
+URDU MODE (BILINGUAL SUPPORT)
+-----------------------------
+CHAOS understands spoken Urdu. When you enable **Urdu Mode**, the AI replies
+in Roman Urdu so the offline voice can read it aloud. Text in Urdu script is
+shown on screen but not spoken, because Windows has no offline Urdu voice.
+
+*   **Command:** "Urdu mode" - Switches language engine to Urdu.
+
+================================================================================
+3. AI BRAIN & INTELLIGENCE (OLLAMA INTEGRATION)
+================================================================================
+
+CHAOS uses **Ollama**, a local Large Language Model runner, as its "brain." This 
+allows it to answer complex questions, write code, summarizes text, and reason 
+about problems locally on your machine, without sending data to the cloud.
+
+INTELLIGENT CONVERSATION
+------------------------
+When the AI Brain is enabled, you can ask CHAOS anything. It handles general 
+knowledge queries, coding questions, and creative writing tasks.
+*   **Usage:** Just ask naturally, e.g., "Why is the sky blue?" or "Write a python script to sort a list."
+
+CONTEXT AWARENESS
+-----------------
+CHAOS remembers the last few exchanges with the AI brain, allowing for natural
+follow-up questions. This context is saved in chaos_data.db, so after a restart
+CHAOS picks up where you left off.
+*   **Example:** 
+    User: "Who directed Inception?"
+    CHAOS: "Christopher Nolan directed Inception."
+    User: "What else did **he** make?" (CHAOS understands "he" refers to Nolan).
+
+MANUAL AI TOGGLE
+----------------
+You have full control over when the heavy AI model is used. You can toggle the 
+AI Brain ON or OFF via the **Menu** (Option 4).
+*   **AI OFF:** CHAOS runs in "System Mode," responding instantly to commands like "Open Chrome" but replying "I don't know" to complex questions. This is faster and uses less RAM.
+*   **AI ON:** CHAOS routes unknown complex queries to the local LLM for intelligent answers.
+
+EXPLICIT OVERRIDE
+-----------------
+Even if the AI Brain is disabled, you can force a smart response by using specific trigger phrases:
+*   **Command:** "Ask Ollama [Question]"
+*   **Command:** "Ask AI [Question]"
+
+================================================================================
+4. MEDIA & APP MANAGEMENT
+================================================================================
+
+CHAOS acts as a complete hands-free controller for your Windows environment.
+
+MEDIA CONTROLS
+--------------
+Control Spotify, YouTube, or any media player without Alt-Tabbing.
+*   **Play/Pause:** "Play music", "Pause song", "Resume".
+*   **Navigation:** "Next song", "Skip track", "Previous song".
+*   **Volume:** "Volume up" (increases by 10%), "Volume down", "Mute".
+
+APPLICATION CONTROL
+-------------------
+Launch or kill any application by name.
+*   **Opening Apps:** "Open [Name]". CHAOS uses a smart mapping system to find apps like Spotify, Discord, VS Code, and standard Windows apps.
+*   **Closing Apps:** "Close [Name]" or "Kill [Name]". This uses system-level commands to forcefully terminate the process, useful for frozen apps.
+*   **Process Management:** Command "Running processes" lists what is currently active on your system.
+
+================================================================================
+5. SYSTEM UTILITIES & TOOLS
+================================================================================
+
+Keep your PC healthy and clean with voice-activated tools.
+
+SYSTEM HEALTH MONITORING
+------------------------
+CHAOS can read your system's vital signs.
+*   **Command:** "System health" or "Status report".
+*   **Result:** Speaks your current CPU usage, RAM availability, and Battery percentage.
+
+NETWORK TOOLS
+-------------
+*   **Command:** "Internet speed test" - Runs a download test (disabled in offline mode).
+*   **Command:** "My IP address" - Your local network IP (plus your public IP when offline mode is off).
+
+CLEANUP
+-------
+*   **Command:** "Empty recycle bin" - Permanently deletes files in the trash.
+*   **Command:** "Clear temp files" - Scans your Windows Temp folders and removes unnecessary temporary files to free up space.
+
+DISPLAY SETTINGS
+----------------
+*   **Command:** "Dark mode" / "Light mode" - Toggles your entire Windows system theme preference.
+
+================================================================================
+6. SMART VISION & CLIPBOARD FEATURES
+================================================================================
+
+TRUE SIGHT (SCREEN VISION)
+--------------------------
+True Sight reads your screen on demand. It takes a screenshot, reads the text on
+it with the OCR engine built into Windows, and asks the local AI brain about it.
+The screenshot is deleted straight away and nothing leaves your PC. Reading the
+screen takes about half a second; the full answer aims to arrive within 5 seconds.
+*   **Command:** "Scan screen" / "Read my screen" / "True Sight scan" - Describes what is on screen.
+*   **Command:** "Scan screen and tell me [question]" - e.g. "...and tell me what the error means".
+*   **Command:** "Enable True Sight" - Watches the screen text in the background and alerts you to errors.
+True Sight works from the screen's text, so it can't describe pictures or colours.
+
+SMART CLIPBOARD
+---------------
+CHAOS can process text you have copied to your clipboard.
+1.  **Summarize:** Copy a long article and say "Summarize clipboard".
+2.  **Explain Code:** Copy a block of code and say "Explain this code".
+3.  **Translate:** Copy text and say "Translate clipboard to [Language]".
+
+SCREEN RECORDING
+----------------
+CHAOS includes a built-in screen recorder.
+*   **Command:** "Record my screen" - Starts capturing video to an MP4 file.
+*   **Command:** "Stop recording" - Saves and closes the video file.
+
+================================================================================
+7. PRODUCTIVITY SUITE
+================================================================================
+
+CHAOS aims to keep you focused and organized.
+
+FOCUS TIMER (POMODORO)
+----------------------
+Initiates a standard 25-minute focus session followed by a 5-minute break suggestion.
+*   **Command:** "Start Pomodoro".
+
+REMINDERS & TODOS
+-----------------
+*   **Reminders:** "Remind me to [Task] in [X] minutes". Sets a background timer that will alert you via voice and text.
+*   **Task List:** "Add task [Name]" adds to your internal todo list. "List tasks" reads them out. "Complete task [Number]" crosses them off.
+
+HABIT TRACKER
+-------------
+A persistent system to track daily habits.
+*   **Command:** "Track habit [Name]" (e.g., "Track habit Gym").
+*   **Function:** CHAOS logs the date. Saying "My habits" shows your current streak and consistency for each habit.
+
+NOTES
+-----
+*   **Command:** "Take a note [text]" saves a note. "Read my notes" reads the last five.
+
+MEMORY SYSTEM
+-------------
+Everything CHAOS remembers - conversations, notes, facts, tasks, reminders,
+habits and your preferences (voice, input mode, Urdu mode, AI on/off) - is
+stored in one local database, chaos_data.db. It is saved after every command,
+so nothing is lost if the PC shuts down unexpectedly. Menu options 7 and 8 view
+and clear the conversation history.
+
+CHAOS can also store arbitrary key-value pairs for you.
+*   **Store:** "Remember my [Key] is [Value]" (e.g., "Remember my passport number is 12345").
+*   **Recall:** "What is my [Key]?" (e.g., "What is my passport number?").
+*   **Manage:** "Forget [Key]" deletes the memory.
+
+================================================================================
+8. ENTERTAINMENT & RANDOMIZATION
+================================================================================
+
+For when you need a break or a random decision.
+*   **Jokes:** "Tell me a joke" (Focuses on programming/tech humor).
+*   **Motivation:** "Motivate me" (Read an inspirational quote).
+*   **Randomizers:** "Flip a coin", "Roll a dice", "Pick a card".
+*   **Decisions:** "Pick between A and B" - CHAOS makes a random unbiased choice for you.
+
+================================================================================
+This manual is automatically generated and maintained by the 
+C.H.A.O.S. Development Module.
+================================================================================

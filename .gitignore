@@ -1,0 +1,26 @@
+# Personal data created at runtime (never commit: conversations, notes, memory)
+chaos_data.db
+chaos_data.db-*
+conversation_history.json
+chaos_memory.json
+chaos_todo.json
+chaos_reminders.json
+chaos_habits.json
+workspace/
+backup/
+
+# Build output and large binaries
+build/
+dist/
+*.exe
+*.mp4
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Editor / tool folders
+.claude/
+.vscode/
