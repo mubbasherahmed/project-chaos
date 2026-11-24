@@ -86,7 +86,16 @@ def open_website(url, feature):
 import sqlite3
 import shutil
 
-APP_DIR = os.path.dirname(os.path.abspath(__file__))
+# RES_DIR: files shipped with CHAOS (OCR script, bundled Whisper model).
+# APP_DIR: where the user's data lives. Next to CHAOS.py when run as a script;
+# %LOCALAPPDATA%\CHAOS when run as the packaged CHAOS.exe (its own folder is read-only/temporary).
+if getattr(sys, 'frozen', False):
+    RES_DIR = getattr(sys, '_MEIPASS', os.path.dirname(sys.executable))
+    APP_DIR = os.path.join(os.environ.get('LOCALAPPDATA', os.path.expanduser('~')), 'CHAOS')
+else:
+    RES_DIR = os.path.dirname(os.path.abspath(__file__))
+    APP_DIR = RES_DIR
+os.makedirs(APP_DIR, exist_ok=True)
 DB_PATH = os.path.join(APP_DIR, "chaos_data.db")
 _db_conn = None
 _db_lock = threading.RLock()
@@ -539,11 +548,20 @@ def speak_local_tts(text, lang='en'):
         print(f"[Local TTS error: {e}]")
         return False
 
+# GUI integration: functions registered here receive every reply CHAOS gives
+ui_listeners = []
+last_speak_time = 0.0
+
 def speak(text, allow_interrupt=True, force_voice=False):
     """Speak text with multi-language support"""
-    global is_speaking, interrupt_flag, interrupted_text, voice_mode
+    global is_speaking, interrupt_flag, interrupted_text, voice_mode, last_speak_time
     
     print(f"CHAOS: {text}")
+    for listener in list(ui_listeners):
+        try:
+            listener(text)
+        except Exception as e:
+            print(f"[UI listener error: {e}]")
     log_conversation('assistant', text, current_language)
     
     # NFR-01: time from the end of the user's command to CHAOS's first reply
@@ -599,6 +617,7 @@ def speak(text, allow_interrupt=True, force_voice=False):
             print(f"[pyttsx3 fallback failed: {e}]")
     
     is_speaking = False
+    last_speak_time = time.time()
     
     # Return whether we were interrupted and what was said
     return interrupt_flag, interrupted_text
@@ -668,8 +687,11 @@ def get_whisper_model():
             if whisper_model is None:
                 from faster_whisper import WhisperModel
                 print(f"[Loading local speech model: faster-whisper '{WHISPER_MODEL_SIZE}' on {WHISPER_DEVICE}...]")
+                # The packaged app ships the model inside itself; otherwise use the HF cache
+                bundled = os.path.join(RES_DIR, "models", f"faster-whisper-{WHISPER_MODEL_SIZE}")
+                model_ref = bundled if os.path.isfile(os.path.join(bundled, "model.bin")) else WHISPER_MODEL_SIZE
                 try:
-                    whisper_model = WhisperModel(WHISPER_MODEL_SIZE, device=WHISPER_DEVICE,
+                    whisper_model = WhisperModel(model_ref, device=WHISPER_DEVICE,
                                                  compute_type=WHISPER_COMPUTE_TYPE)
                 except Exception as e:
                     raise RuntimeError(
@@ -935,7 +957,7 @@ def ask_ollama(query, history=None, language='en'):
 # On-demand screen understanding, fully local:
 #   screenshot -> Windows' built-in OCR (true_sight_ocr.ps1) -> local Ollama text model.
 # OCR keeps it fast (~0.5 s) and light on RAM, unlike sending images to a vision model.
-TRUE_SIGHT_OCR_SCRIPT = os.path.join(APP_DIR, "true_sight_ocr.ps1")
+TRUE_SIGHT_OCR_SCRIPT = os.path.join(RES_DIR, "true_sight_ocr.ps1")
 TRUE_SIGHT_MAX_CHARS = 4000          # screen text passed to the model (a full screen is ~2000)
 TRUE_SIGHT_MAX_REPLY_TOKENS = 80     # short spoken answers keep True Sight fast
 TRUE_SIGHT_SYSTEM_PROMPT = (
@@ -2140,13 +2162,19 @@ def generate_password(length=16, include_symbols=True):
 # --- POMODORO TIMER ---
 pomodoro_active = False
 pomodoro_thread = None
+pomodoro_started_at = 0.0  # read by the GUI to show the countdown
+pomodoro_work_minutes = 25
+pomodoro_break_minutes = 5
 
 def start_pomodoro(work_minutes=25, break_minutes=5):
     """Start a pomodoro focus timer"""
-    global pomodoro_active, pomodoro_thread
+    global pomodoro_active, pomodoro_thread, pomodoro_started_at, pomodoro_work_minutes, pomodoro_break_minutes
     
     if pomodoro_active:
         return "Pomodoro is already running. Say 'stop pomodoro' to cancel."
+    pomodoro_active = True
+    pomodoro_started_at = time.time()
+    pomodoro_work_minutes, pomodoro_break_minutes = work_minutes, break_minutes
     
     def pomodoro_cycle():
         global pomodoro_active
@@ -3407,7 +3435,7 @@ def process_command(query, history, language='en'):
             return None, False, was_interrupted, int_text
     
     # SECURITY: All file operations restricted to workspace folder only
-    WORKSPACE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "workspace")
+    WORKSPACE = os.path.join(APP_DIR, "workspace")
     
     # Ensure workspace exists
     if not os.path.exists(WORKSPACE):
@@ -3993,6 +4021,20 @@ def process_command(query, history, language='en'):
                 app_name = app_name.split(prefix, 1)[-1].strip()
                 break
         
+        # Websites go through the offline-mode check instead of being launched as apps
+        web_targets = {'youtube': 'https://youtube.com', 'google': 'https://google.com',
+                       'gmail': 'https://mail.google.com', 'facebook': 'https://facebook.com',
+                       'github': 'https://github.com', 'chatgpt': 'https://chatgpt.com'}
+        is_site = app_name in web_targets or app_name.startswith(('http', 'www.')) or \
+            re.search(r'\.(com|org|net|pk|io|edu)\b', app_name or '')
+        if app_name and is_site:
+            url = web_targets.get(app_name) or (app_name if app_name.startswith('http') else f"https://{app_name}")
+            if open_website(url, app_name):
+                was_interrupted, int_text = speak(f"Opening {app_name}")
+            else:
+                was_interrupted, int_text = speak(OFFLINE_BLOCK_MESSAGE)
+            return None, False, was_interrupted, int_text
+
         if app_name:
             was_interrupted, int_text = speak(f"Opening {app_name}")
             success, result = launch_app(app_name)

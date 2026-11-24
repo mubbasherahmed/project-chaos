@@ -42,17 +42,38 @@ After this, CHAOS works with the network disabled.
 
 ## Run
 
+**Desktop app (CHAOS Control Panel):**
+
+```powershell
+py -3.11 chaos_app.py
+```
+
+The Control Panel has the 9 screens designed in Deliverable 4: Unlock (local PIN), Dashboard, Conversation, True Sight, Productivity, Memory and History, Settings, Performance, and error/empty-state banners, plus a System Check screen. On first run, System Check starts Ollama if it is installed and offers a one-click download of Llama 3.2.
+
+**Console version:**
+
 ```powershell
 .\RUN_CHAOS.bat
 ```
 
-or start `launcher.py` for the system-tray launcher. Say or type `menu` for settings. See `CHAOS_MANUAL.txt` for every command.
+See `CHAOS_MANUAL.txt` for every voice command.
+
+## Build CHAOS.exe
+
+```powershell
+py -3.11 -m pip install pyinstaller
+py -3.11 -m PyInstaller CHAOS.spec --noconfirm
+```
+
+The result is `dist\CHAOS\CHAOS.exe`. Python is bundled, and so is the Whisper speech model, so the target PC needs only Windows 10/11 and [Ollama](https://ollama.com). Copy the whole `dist\CHAOS` folder. In the packaged app, user data is stored in `%LOCALAPPDATA%\CHAOS`.
 
 ## Files
 
 | File | Purpose |
 | --- | --- |
-| `CHAOS.py` | The assistant |
+| `CHAOS.py` | The assistant engine (voice, OS control, AI, True Sight, database) |
+| `chaos_app.py` | CHAOS Control Panel desktop app (GUI) |
+| `CHAOS.spec` | PyInstaller build spec for CHAOS.exe |
 | `launcher.py`, `CHAOS_Launcher.spec` | System-tray launcher and its PyInstaller build spec |
 | `true_sight_ocr.ps1` | Windows OCR helper used by True Sight |
 | `test_mic.py` | Microphone and speech-model check |
